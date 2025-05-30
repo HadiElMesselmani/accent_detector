@@ -1,1 +1,10 @@
 yt-dlp
+SpeechRecognition
+pydub
+langdetect
+torch
+speechbrain==0.5.16
+transformers
+soundfile
+flask
+flask-cors

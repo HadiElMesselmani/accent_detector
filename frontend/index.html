@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Accent Detector</title>
+  <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: #f5f6fa;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 40px 20px;
+        overflow-y: auto;
+    }
+
+    .card {
+        background: #ffffff;
+        padding: 2.5rem 2rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 500px;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        margin-top: 0;
+        text-align: center;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    p {
+        text-align: center;
+        color: #555;
+        margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: border 0.3s;
+    }
+
+    input[type="text"]:focus {
+        border-color: #4a90e2;
+        outline: none;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #357abd;
+    }
+
+    .loading {
+        margin-top: 1rem;
+        font-style: italic;
+        text-align: center;
+        color: #666;
+    }
+
+    .result {
+        margin-top: 2rem;
+    }
+
+    .accent-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+
+    .accent-label {
+        flex: 0 0 120px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bar-container {
+        flex: 1;
+        background-color: #e0e0e0;
+        height: 12px;
+        border-radius: 6px;
+        margin: 0 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        background-color: #4a90e2;
+        border-radius: 6px 0 0 6px;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    .accent-score {
+        width: 60px;
+        text-align: right;
+        font-family: monospace;
+    }
+
+    @media (max-width: 600px) {
+        .card {
+        margin: 1rem;
+        }
+
+        .accent-label {
+        flex: 0 0 100px;
+        }
+    }
+</style>
+
+</head>
+<body>
+
+  <div class="card">
+    <h2>Accent Detector</h2>
+    <p>Paste a YouTube or direct video URL:</p>
+
+    <input type="text" id="video-url" placeholder="https://example.com/video.mp4" />
+    <button onclick="analyze()">Analyze</button>
+
+    <div id="status" class="loading"></div>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    async function analyze() {
+      const url = document.getElementById("video-url").value.trim();
+      const resultDiv = document.getElementById("result");
+      const statusDiv = document.getElementById("status");
+
+      resultDiv.innerHTML = "";
+      statusDiv.textContent = "Analyzing... This may take 30–40 seconds.";
+
+      if (!url) {
+        statusDiv.textContent = "Please enter a video URL.";
+        return;
+      }
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await response.json();
+        statusDiv.textContent = "";
+
+        if (response.ok) {
+            let html = "<h3>Detected Accents</h3>";
+            data.forEach(([accent, score]) => {
+            html += `
+                <div class="accent-row">
+                <div class="accent-label">${accent}</div>
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: ${score}%;"></div>
+                </div>
+                <div class="accent-score">${score.toFixed(1)}%</div>
+                </div>
+            `;
+            });
+          resultDiv.innerHTML = html;
+        } else {
+          resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+        }
+
+      } catch (err) {
+        console.error(err);
+        statusDiv.textContent = "";
+        resultDiv.innerHTML = "<span style='color:red;'>Failed to connect to the server.</span>";
+      }
+    }
+  </script>
+
+</body>
+</html>
